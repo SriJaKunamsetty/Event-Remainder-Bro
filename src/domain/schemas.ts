@@ -52,6 +52,7 @@ export type PriorityCategory = (typeof PRIORITY_CATEGORIES)[number];
 export type BudgetCategory = (typeof BUDGET_CATEGORIES)[number];
 export type DietaryNeed = (typeof DIETARY_NEEDS)[number];
 export type AccessibilityNeed = (typeof ACCESSIBILITY_NEEDS)[number];
+export type PlannerExperience = (typeof PLANNER_EXPERIENCE)[number];
 
 const uniqueList = <T extends z.ZodType>(item: T, max: number) =>
   z
