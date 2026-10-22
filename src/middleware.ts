@@ -5,13 +5,13 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Protects against XSS, Clickjacking, MIME-sniffing, and frame injection.
  */
 export function middleware(request: NextRequest): NextResponse {
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
-    style-src 'self' 'nonce-${nonce}';
-    img-src 'self' blob: data:;
-    font-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' blob: data: https:;
+    font-src 'self' https://fonts.gstatic.com data:;
+    connect-src 'self' https:;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -22,7 +22,6 @@ export function middleware(request: NextRequest): NextResponse {
     .trim();
 
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', cspHeader);
 
   const response = NextResponse.next({
