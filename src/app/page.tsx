@@ -100,7 +100,7 @@ export default function HomePage() {
         <AppHeader />
         <EventBriefForm initialBrief={brief} onBriefChange={setBrief} />
         <BudgetBreakdownView plan={budgetPlan} />
-        <TimelineScheduleView timeline={timeline} />
+        <TimelineScheduleView timeline={timeline} brief={brief} />
         <AccessibleAssistantChat context={userContext} />
         <footer className="text-center text-xs text-neutral-500 pt-8 pb-4">
           Built for Google PromptWars 2026 · Adheres to Google Engineering Practices, OWASP LLM Top

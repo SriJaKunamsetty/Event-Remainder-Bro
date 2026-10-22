@@ -1,7 +1,21 @@
 'use client';
 
 import type { BudgetLine, BudgetPlan } from '@/domain/budget';
+import { generateBudgetCsv } from '@/domain/budget-export';
 import { formatMinor } from '@/domain/money';
+
+function downloadBudgetCsv(plan: BudgetPlan): void {
+  const csvContent = generateBudgetCsv(plan);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `EventCraft_Budget_${plan.currency}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 
 function BudgetCard({ line, currency }: { readonly line: BudgetLine; readonly currency: string }) {
   const isContingency = line.category === 'contingency';
@@ -28,13 +42,43 @@ function BudgetCard({ line, currency }: { readonly line: BudgetLine; readonly cu
   );
 }
 
+function BudgetHeaderSummary({ plan }: { readonly plan: BudgetPlan }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="text-right">
+        <span className="text-xs text-neutral-500 uppercase tracking-wider block">
+          Total Budget
+        </span>
+        <span className="text-lg font-bold text-neutral-900">
+          {formatMinor(plan.totalMinor, plan.currency)}
+        </span>
+      </div>
+      <div className="text-right border-l border-neutral-200 pl-3">
+        <span className="text-xs text-neutral-500 uppercase tracking-wider block">Per Guest</span>
+        <span className="text-lg font-bold text-blue-700">
+          {formatMinor(plan.perGuestMinor, plan.currency)}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => downloadBudgetCsv(plan)}
+        aria-label="Download Penny-Perfect Budget Allocation CSV spreadsheet"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 shadow-xs hover:bg-neutral-50 focus:outline-2 focus:outline-blue-700 min-h-[44px]"
+      >
+        <span>📥</span>
+        <span>Export CSV</span>
+      </button>
+    </div>
+  );
+}
+
 export const BudgetBreakdownView = ({ plan }: { readonly plan: BudgetPlan }) => {
   return (
     <section
       aria-labelledby="budget-heading"
       className="rounded-xl border border-neutral-300 bg-white p-5 shadow-sm"
     >
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 pb-3">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 pb-3">
         <div>
           <h2 id="budget-heading" className="text-xl font-bold text-neutral-900">
             Penny-Perfect Budget Allocation
@@ -44,24 +88,7 @@ export const BudgetBreakdownView = ({ plan }: { readonly plan: BudgetPlan }) => 
             drift.
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <span className="text-xs text-neutral-500 uppercase tracking-wider block">
-              Total Budget
-            </span>
-            <span className="text-lg font-bold text-neutral-900">
-              {formatMinor(plan.totalMinor, plan.currency)}
-            </span>
-          </div>
-          <div className="text-right border-l border-neutral-200 pl-4">
-            <span className="text-xs text-neutral-500 uppercase tracking-wider block">
-              Per Guest
-            </span>
-            <span className="text-lg font-bold text-blue-700">
-              {formatMinor(plan.perGuestMinor, plan.currency)}
-            </span>
-          </div>
-        </div>
+        <BudgetHeaderSummary plan={plan} />
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

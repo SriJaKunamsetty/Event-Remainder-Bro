@@ -1,6 +1,74 @@
 'use client';
 
+import type { EventBrief } from '@/domain/schemas';
 import type { Timeline, TimelineTask } from '@/domain/timeline';
+import {
+  generateGoogleCalendarUrl,
+  generateIcsCalendar,
+  type CalendarEventParams,
+} from '@/domain/calendar';
+
+function downloadIcsCalendar(params: CalendarEventParams): void {
+  const ics = generateIcsCalendar(params);
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'EventCraft_Celebration.ics');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function CalendarActionButtons({
+  timeline,
+  brief,
+}: {
+  readonly timeline: Timeline;
+  readonly brief?: EventBrief;
+}) {
+  const eventTitle = brief
+    ? `${brief.eventType.toUpperCase()} Celebration (${brief.guestCount} Guests)`
+    : `Celebration Event`;
+  const description = brief
+    ? `EventCraft Celebration Plan: ${brief.guestCount} guests, ${brief.venueType} venue. Date: ${timeline.eventDate}.`
+    : `EventCraft Celebration on ${timeline.eventDate}`;
+  const location = brief ? `${brief.venueType.toUpperCase()} Venue` : 'Event Venue';
+
+  const params: CalendarEventParams = {
+    title: eventTitle,
+    description,
+    eventDate: timeline.eventDate,
+    location,
+  };
+
+  const googleCalUrl = generateGoogleCalendarUrl(params);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <a
+        href={googleCalUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Add celebration event to Google Calendar"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-blue-600 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-100 focus:outline-2 focus:outline-blue-700 min-h-[44px]"
+      >
+        <span>📅</span>
+        <span>Google Calendar</span>
+      </a>
+      <button
+        type="button"
+        onClick={() => downloadIcsCalendar(params)}
+        aria-label="Download Apple or Outlook iCalendar (.ics) file"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 shadow-xs hover:bg-neutral-50 focus:outline-2 focus:outline-blue-700 min-h-[44px]"
+      >
+        <span>📥</span>
+        <span>Download .ICS</span>
+      </button>
+    </div>
+  );
+}
 
 function TimelineTaskItem({ task }: { readonly task: TimelineTask }) {
   const isCompressed = task.status === 'compressed';
@@ -43,7 +111,13 @@ function TimelineTaskItem({ task }: { readonly task: TimelineTask }) {
   );
 }
 
-export const TimelineScheduleView = ({ timeline }: { readonly timeline: Timeline }) => {
+export const TimelineScheduleView = ({
+  timeline,
+  brief,
+}: {
+  readonly timeline: Timeline;
+  readonly brief?: EventBrief;
+}) => {
   const riskBadgeStyles: Record<Timeline['risk'], { bg: string; label: string }> = {
     none: { bg: 'bg-green-100 text-green-900 border-green-300', label: 'Feasible (On Track)' },
     tight: { bg: 'bg-amber-100 text-amber-900 border-amber-300', label: 'Tight Timeline' },
@@ -57,7 +131,7 @@ export const TimelineScheduleView = ({ timeline }: { readonly timeline: Timeline
       aria-labelledby="timeline-heading"
       className="rounded-xl border border-neutral-300 bg-white p-5 shadow-sm"
     >
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 pb-3">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 pb-3">
         <div>
           <h2 id="timeline-heading" className="text-xl font-bold text-neutral-900">
             Backward-Scheduled Task Timeline
@@ -67,13 +141,16 @@ export const TimelineScheduleView = ({ timeline }: { readonly timeline: Timeline
             until event).
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-neutral-600">Schedule Risk:</span>
-          <span
-            className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${risk.bg}`}
-          >
-            {risk.label}
-          </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <CalendarActionButtons timeline={timeline} brief={brief} />
+          <div className="flex items-center gap-2 pl-2 border-l border-neutral-200">
+            <span className="text-xs font-medium text-neutral-600">Risk:</span>
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${risk.bg}`}
+            >
+              {risk.label}
+            </span>
+          </div>
         </div>
       </header>
 
