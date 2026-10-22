@@ -53,6 +53,19 @@ Rather than treating the LLM as an unconstrained calculator, EventCraft implemen
 └──────────────────────────────────┘   └─────────────────────────────────┘
 ```
 
+### Master Architectural Blueprint & Rubric Mapping
+
+| Repository Path                              | Architectural Layer           | Primary Responsibility & Rubric Mapping                                                                                           |
+| :------------------------------------------- | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/context-engine.ts`                 | Domain Decision Layer         | Evaluates structured user context, calibrates PAIR mental models, and routes autonomy modes.                                      |
+| `src/security/guardrails.ts`                 | Zero-Trust Security Layer     | Enforces OWASP LLM Top 10 controls outside the model: PII redaction, injection regex, Canary Tokens, XSS scrubbing.               |
+| `src/services/assistant-service.ts`          | Application Service Layer     | Implements SOLID Dependency Inversion (`GenerativeModelPort`) and deterministic offline fallback.                                 |
+| `src/app/api/assistant/route.ts`             | Edge Transport Controller     | Handles requests, rate limiting, prunes history in $O(1)$, caps `maxSteps: 3`, and binds `AbortSignal`.                           |
+| `src/components/AccessibleAssistantChat.tsx` | Accessible Presentation Layer | Delivers WCAG 2.2 AA compliance with sentence-buffered `aria-live="polite"`, $\ge 24 \times 24$px targets, and quick-reply chips. |
+| `src/middleware.ts`                          | HTTP Edge Perimeter           | Injects per-request Content-Security-Policy, HSTS, and clickjacking protection headers.                                           |
+| `src/__tests__/assistant.test.ts`            | Verification Suite            | Executes deterministic Google State Testing using an injected `FakeGenerativeModel` without network flakiness.                    |
+| `README.md`                                  | Canonical Documentation       | Documents the vertical persona, PAIR decision logic, OWASP security architecture, and system assumptions.                         |
+
 ### Rubric Breakdown:
 
 - **Code Quality (High Impact):**

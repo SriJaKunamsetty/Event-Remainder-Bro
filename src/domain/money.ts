@@ -6,8 +6,9 @@ import { DomainError } from './errors';
  */
 export function currencyExponent(currency: string): number {
   try {
-    return new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions()
-      .maximumFractionDigits!;
+    const options = new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions();
+    // Resolves minor unit exponent safely without non-null assertion
+    return typeof options.maximumFractionDigits === 'number' ? options.maximumFractionDigits : 2;
   } catch {
     throw new DomainError('INVALID_CURRENCY', `"${currency}" is not a valid ISO 4217 code.`);
   }

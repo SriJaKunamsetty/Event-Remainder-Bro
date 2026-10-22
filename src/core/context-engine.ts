@@ -7,6 +7,10 @@ export const UserContextSchema = z.strictObject({
     'wedding_concierge',
     'birthday_specialist',
     'community_coordinator',
+    'financial_advisor',
+    'healthcare_triage',
+    'education_tutor',
+    'ops_copilot',
   ]),
   expertiseLevel: z.enum(['novice', 'intermediate', 'expert']),
   urgencyLevel: z.enum(['low', 'normal', 'critical']),
@@ -33,32 +37,35 @@ export interface DecisionRoutingResult {
  */
 export class ContextDecisionEngine {
   public evaluateContext(context: UserContext, userQuery: string): DecisionRoutingResult {
+    const isHighRiskDomain =
+      context.verticalPersona === 'healthcare_triage' ||
+      context.verticalPersona === 'financial_advisor';
     const isCriticalUrgency = context.urgencyLevel === 'critical';
-    const containsHighStakeIntent =
-      /\b(cancel|deposit|contract|sign|payment|liability|alcohol\s+licence|permit)\b/i.test(
+    const containsDestructiveIntent =
+      /\b(cancel|deposit|contract|sign|payment|liability|alcohol\s+licence|permit|delete|transfer|execute|override|prescribe)\b/i.test(
         userQuery,
       );
 
-    if (isCriticalUrgency && containsHighStakeIntent) {
+    if (isCriticalUrgency && (isHighRiskDomain || containsDestructiveIntent)) {
       return {
         executionMode: 'deterministic_fallback',
         calibratedTemperature: 0.0,
         systemInstructionAugmentation:
-          'CRITICAL TIMELINE STATE: Provide strictly verified emergency checklists. Do not speculate.',
+          'CRITICAL STATE: Provide strictly verified emergency checklists and protocol steps. Do not speculate.',
         requiresExplicitConfirmation: true,
         rationale:
-          'High-stakes event action combined with critical urgency triggers deterministic protocol.',
+          'High-stakes action combined with critical urgency triggers deterministic safety protocol.',
       };
     }
 
-    if (containsHighStakeIntent) {
+    if (containsDestructiveIntent || isHighRiskDomain) {
       return {
         executionMode: 'human_in_the_loop',
         calibratedTemperature: 0.2,
         systemInstructionAugmentation: this.buildPersonaDirectives(context),
         requiresExplicitConfirmation: true,
         rationale:
-          'Action impacts contracts, alcohol licensing, or non-refundable deposits; explicit human confirmation required.',
+          'Action impacts sensitive state or regulated vertical; human confirmation required prior to execution.',
       };
     }
 

@@ -88,7 +88,8 @@ export function buildTimeline(input: TimelineInput, today: string): Timeline {
   }
 
   const templates = TIMELINE_TEMPLATES[input.eventType].filter((t) => appliesTo(t, input));
-  const longestLead = Math.max(...templates.map((template) => template.leadDays));
+  const longestLead =
+    templates.length > 0 ? Math.max(...templates.map((template) => template.leadDays)) : 0;
 
   const tasks = templates
     .map((template): TimelineTask => {

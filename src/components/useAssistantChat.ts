@@ -7,6 +7,29 @@ import type { ChatMessage } from './ChatTranscript';
 let globalMsgCounter = 0;
 const generateId = (prefix: string) => `${prefix}_${++globalMsgCounter}`;
 
+async function fetchAssistantResponse(
+  context: UserContext,
+  messages: ReadonlyArray<ChatMessage>,
+  userMsg: ChatMessage,
+): Promise<{ answer: string; rationale?: string }> {
+  const response = await fetch('/api/assistant', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      context,
+      messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errorData.error ?? 'Unable to complete request. Safe fallback mode activated.');
+  }
+
+  const data = (await response.json()) as { answer?: string; rationale?: string };
+  return { answer: data.answer ?? 'Response completed.', rationale: data.rationale };
+}
+
 export function useAssistantChat(context: UserContext) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState<string>('');
@@ -30,27 +53,20 @@ export function useAssistantChat(context: UserContext) {
     setAnnouncement('Assistant is analyzing context and generating recommendations.');
 
     try {
-      const response = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          context,
-          messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const data = (await response.json()) as { answer?: string; rationale?: string };
+      const data = await fetchAssistantResponse(context, messages, userMsg);
       setMessages((prev) => [
         ...prev,
         {
           id: generateId('ast'),
           role: 'assistant',
-          content: data.answer ?? 'Response completed.',
+          content: data.answer,
           rationale: data.rationale,
         },
       ]);
-      setAnnouncement(`Assistant responded: ${data.answer ?? 'Done'}`);
+      setAnnouncement(`Assistant responded: ${data.answer}`);
     } catch (err) {
-      setErrorAlert(err instanceof Error ? err.message : 'Network error occurred. Please retry.');
+      const msg = err instanceof Error ? err.message : 'Network error occurred.';
+      setErrorAlert(`${msg} Please select a quick-reply chip or retry.`);
     } finally {
       setIsProcessing(false);
     }
