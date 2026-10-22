@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output (keeps the repository far below the 10 MB limit)
+.next/
+out/
+build/
+dist/
+.vercel/
+
+# Secrets: never commit keys. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Test, debug and OS artifacts
+coverage/
+*.log
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
